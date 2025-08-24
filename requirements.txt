@@ -1,7 +1,23 @@
+# GPIO and Hardware Support for Qualcomm QCM6490
 Adafruit_Blinka
 Adafruit_CircuitPython_BusDevice
 Adafruit_CircuitPython_Motor
 Adafruit_CircuitPython_VL53L0X
 Adafruit_CircuitPython_VL53L1X
 # Adafruit_CircuitPython_MLX90632
+
+# AI/ML Models
 qai-hub-models[yolov11-det]
+torch
+torchvision
+
+# Computer Vision
+opencv-python
+numpy
+matplotlib
+
+# Optional: Roboflow dataset download
+roboflow
+
+# Optional: For Raspberry Pi GPIO (alternative to Blinka)
+# RPi.GPIO

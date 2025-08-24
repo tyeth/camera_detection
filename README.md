@@ -1,12 +1,133 @@
-# GStreamer Frame Capture with Object Detection
+# Camera Detection System with Squirrel Model
 
-This project demonstrates a frame capture and object detection system that works on both Windows (for development) and Qualcomm QCM6490 devices (for deployment).
+This project implements a real-time object detection system using GStreamer for camera capture and QAI Hub's YOLOv11 model for detection. It's designed to work on Qualcomm QCM6490 devices with CSI cameras and includes GPIO trigger support.
 
-## Project Structure
+## 🎯 Features
 
-- `gstreamer_frame_capture.ipynb`: Main Jupyter notebook for camera frame capture and object detection
-- `gstreamer_yolo_requirements.txt`: Requirements for the project
-- `test_images/`: Directory containing test images for Windows development
+- **Real-time object detection** using QAI Hub YOLOv11 model
+- **GStreamer camera capture** optimized for Qualcomm QCM6490 CSI cameras
+- **GPIO trigger support** for hardware activation on detection
+- **Cross-platform development** with test images on Windows/Linux
+- **Squirrel-focused detection** with support for multiple animal classes
+- **Hardware acceleration** support for Qualcomm NPU/GPU
+
+## 📁 Project Structure
+
+```
+camera_detection/
+├── squirrel_model_info.json          # Model metadata and configuration
+├── test_squirrel_model.py             # Test script for model verification
+├── gstreamer_camera_detection.py     # Main GStreamer detection system
+├── download_squirrel_model.py         # Model download and setup utilities
+├── gstreamer_frame_capture.ipynb     # Development notebook (reference)
+├── requirements.txt                   # Core Python dependencies
+├── gstreamer_requirements.txt         # GStreamer-specific requirements
+├── gstreamer_yolo_requirements.txt    # Complete requirements list
+├── test_images/                       # Sample test images
+├── build/                            # Build outputs
+└── README.md                         # This file
+```
+
+## 🚀 Quick Start
+
+### 1. Environment Setup
+
+First, set up the complete environment:
+
+```bash
+# Install all dependencies and download model
+python download_squirrel_model.py --setup
+```
+
+### 2. Test Model Detection
+
+Test the detection system with sample images:
+
+```bash
+# Run basic model test
+python test_squirrel_model.py
+
+# Get help and options
+python test_squirrel_model.py --help
+```
+
+### 3. Camera Detection (Qualcomm QCM6490)
+
+Run real-time camera detection:
+
+```bash
+# Quick 10-second test
+python gstreamer_camera_detection.py --test
+
+# Continuous detection (Ctrl+C to stop)
+python gstreamer_camera_detection.py
+
+# Use camera 1 (CSI1) with lower confidence threshold
+python gstreamer_camera_detection.py --camera 1 --confidence 0.3
+
+# Run for specific duration
+python gstreamer_camera_detection.py --duration 60
+```
+
+## 🛠️ Installation
+
+### Method 1: Automatic Setup (Recommended)
+
+```bash
+# Clone or download the project
+cd camera_detection
+
+# Run automatic setup
+python download_squirrel_model.py --setup
+```
+
+### Method 2: Manual Installation
+
+#### Core Dependencies
+
+```bash
+# Install core AI/ML packages
+pip install qai-hub-models[yolov11-det] torch torchvision opencv-python numpy matplotlib
+
+# Install GPIO support (for Qualcomm QCM6490)
+pip install Adafruit_Blinka Adafruit_CircuitPython_BusDevice
+```
+
+#### System Dependencies (Qualcomm QCM6490)
+
+```bash
+# Install GStreamer and development packages
+sudo apt-get update
+sudo apt-get install -y \
+    gstreamer1.0-tools \
+    gstreamer1.0-plugins-base \
+    gstreamer1.0-plugins-good \
+    gstreamer1.0-plugins-bad \
+    gstreamer1.0-plugins-ugly \
+    libgstreamer1.0-dev \
+    libgstreamer-plugins-base1.0-dev \
+    python3-gi \
+    python3-gst-1.0 \
+    python3-dev \
+    libgirepository1.0-dev \
+    libcairo2-dev \
+    pkg-config
+```
+
+#### Requirements Files
+
+You can also install from the provided requirements files:
+
+```bash
+# Basic setup
+pip install -r requirements.txt
+
+# GStreamer-specific setup
+pip install -r gstreamer_requirements.txt
+
+# Complete setup with all optional dependencies
+pip install -r gstreamer_yolo_requirements.txt
+```
 
 ## Key Components
 

@@ -1,10 +1,24 @@
+# Core dependencies for GStreamer camera detection
 numpy 
 matplotlib 
 opencv-python
 PyGObject
+
+# AI/ML for object detection
+qai-hub-models[yolov11-det]
+torch
+torchvision
+
+# GPIO support (choose based on platform)
+Adafruit_Blinka  # Recommended for Qualcomm QCM6490
+# RPi.GPIO  # Alternative for Raspberry Pi
+
 # For Windows, install GStreamer from https://gstreamer.freedesktop.org/download/
 # Make sure to select the "Complete" installation option
 
 # For GStreamer on Qualcomm QCM6490 (when transferring):
 # sudo apt-get update
 # sudo apt-get install -y gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly python3-gi python3-gst-1.0
+
+# Optional: For dataset download from Roboflow
+roboflow

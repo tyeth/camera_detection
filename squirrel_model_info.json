@@ -1,0 +1,51 @@
+{
+  "model_info": {
+    "name": "Squirrel Spotter",
+    "description": "5102 open source Squirrels images plus a pre-trained Squirrel Spotter model",
+    "creator": "Warren Wiens",
+    "url": "https://universe.roboflow.com/warren-wiens-dhxt5/squirrel-spotter",
+    "license": "CC BY 4.0",
+    "dateModified": "2023-08-04T15:38:48.360Z",
+    "images_count": 5102,
+    "classes": ["squirrel"],
+    "format": "YOLOv11"
+  },
+  "download_info": {
+    "roboflow_api_url": "https://universe.roboflow.com/warren-wiens-dhxt5/squirrel-spotter",
+    "api_key_required": true,
+    "formats_available": [
+      "YOLO v5 PyTorch",
+      "YOLO v8", 
+      "YOLO v11",
+      "COCO JSON",
+      "Pascal VOC XML",
+      "TensorFlow",
+      "PyTorch"
+    ]
+  },
+  "integration": {
+    "qai_hub_models": {
+      "model_type": "yolov11_det",
+      "compatible": true,
+      "target_classes": ["squirrel"],
+      "confidence_threshold": 0.5,
+      "notes": "Use the general YOLOv11 detection model from QAI Hub and filter for relevant animal classes"
+    },
+    "gstreamer": {
+      "compatible": true,
+      "pipeline_integration": "Works with qtiqmmfsrc on Qualcomm QCM6490",
+      "frame_processing": "Real-time detection via appsink callback"
+    }
+  },
+  "hardware_support": {
+    "qualcomm_qcm6490": {
+      "acceleration": "NPU and GPU acceleration available",
+      "camera_support": "CSI cameras via qtiqmmfsrc",
+      "gpio_triggers": "Support for GPIO pin activation on detection"
+    },
+    "development": {
+      "windows_testing": "Use test images for development",
+      "linux_deployment": "GStreamer with CSI camera support"
+    }
+  }
+}

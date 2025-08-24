@@ -7,7 +7,63 @@ opencv-python
 PyGObject
 
 # QAI Hub models for YOLO detection
-"qai-hub-models[yolov11-det]"
+"# Complete requirements for GStreamer + YOLO detection system
+# This file combines all dependencies needed for the camera detection system
+
+# Core Python packages
+numpy>=1.21.0
+matplotlib>=3.5.0
+opencv-python>=4.5.0
+
+# AI/ML Framework
+torch>=1.12.0
+torchvision>=0.13.0
+
+# QAI Hub Models for YOLOv11
+qai-hub-models[yolov11-det]
+
+# GStreamer Python bindings
+PyGObject>=3.40.0
+
+# GPIO Support for hardware triggers (Qualcomm QCM6490)
+Adafruit_Blinka>=8.0.0
+Adafruit_CircuitPython_BusDevice>=5.0.0
+
+# Optional: Additional Adafruit sensors
+Adafruit_CircuitPython_Motor
+Adafruit_CircuitPython_VL53L0X
+Adafruit_CircuitPython_VL53L1X
+
+# Optional: Roboflow for custom dataset download
+roboflow>=1.0.0
+
+# Development/Testing
+pytest>=7.0.0
+pillow>=9.0.0
+
+# System requirements (install separately):
+# 
+# For Qualcomm QCM6490 (Linux):
+# sudo apt-get update
+# sudo apt-get install -y \
+#     gstreamer1.0-tools \
+#     gstreamer1.0-plugins-base \
+#     gstreamer1.0-plugins-good \
+#     gstreamer1.0-plugins-bad \
+#     gstreamer1.0-plugins-ugly \
+#     libgstreamer1.0-dev \
+#     libgstreamer-plugins-base1.0-dev \
+#     python3-gi \
+#     python3-gst-1.0 \
+#     python3-dev \
+#     libgirepository1.0-dev \
+#     libcairo2-dev \
+#     pkg-config
+#
+# For Windows development:
+# Download and install GStreamer from https://gstreamer.freedesktop.org/download/
+# Select "Complete" installation option
+# Add GStreamer bin directory to PATH"
 fiftyone==1.0.1
 # For GPIO support on Linux (not needed on Windows)
 # RPi.GPIO  # Uncomment when deploying to Linux
