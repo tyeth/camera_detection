@@ -1,0 +1,7 @@
+Adafruit_Blinka
+Adafruit_CircuitPython_BusDevice
+Adafruit_CircuitPython_Motor
+Adafruit_CircuitPython_VL53L0X
+Adafruit_CircuitPython_VL53L1X
+# Adafruit_CircuitPython_MLX90632
+qai-hub-models[yolov11-det]

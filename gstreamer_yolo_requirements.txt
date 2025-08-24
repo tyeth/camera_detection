@@ -1,0 +1,25 @@
+# Requirements for GStreamer frame capture with YOLO object detection
+
+# General dependencies
+numpy
+matplotlib
+opencv-python
+PyGObject
+
+# QAI Hub models for YOLO detection
+"qai-hub-models[yolov11-det]"
+
+# For GPIO support on Linux (not needed on Windows)
+# RPi.GPIO  # Uncomment when deploying to Linux
+
+# Additional dependencies for Qualcomm QCM6490 (for reference, install via apt)
+# gstreamer1.0-plugins-base
+# gstreamer1.0-plugins-good
+# gstreamer1.0-plugins-bad
+# gstreamer1.0-plugins-ugly
+# python3-gi
+# python3-gst-1.0
+
+# Installation commands for Linux/Qualcomm:
+# sudo apt-get update
+# sudo apt-get install -y gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly python3-gi python3-gst-1.0 python3-rpi.gpio
