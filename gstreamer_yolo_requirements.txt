@@ -8,7 +8,7 @@ PyGObject
 
 # QAI Hub models for YOLO detection
 "qai-hub-models[yolov11-det]"
-
+fiftyone==1.0.1
 # For GPIO support on Linux (not needed on Windows)
 # RPi.GPIO  # Uncomment when deploying to Linux
 
