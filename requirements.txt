@@ -6,18 +6,21 @@ Adafruit_CircuitPython_VL53L0X
 Adafruit_CircuitPython_VL53L1X
 # Adafruit_CircuitPython_MLX90632
 
-# AI/ML Models
-qai-hub-models[yolov11-det]
+# AI/ML Models - Primary: Ultralytics for custom weights
+ultralytics>=8.0.0
 torch
 torchvision
+
+# AI/ML Models - Fallback: QAI Hub models
+qai-hub-models[yolov11-det]
 
 # Computer Vision
 opencv-python
 numpy
 matplotlib
 
-# Optional: Roboflow dataset download
-roboflow
+# Optional: Roboflow dataset download (not for inference)
+# roboflow
 
 # Optional: For Raspberry Pi GPIO (alternative to Blinka)
 # RPi.GPIO

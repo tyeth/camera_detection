@@ -208,15 +208,48 @@ def setup_environment():
         print(f"Creator: {model_info['model_info']['creator']}")
         print()
     
-    # Install QAI Hub if needed
+    # Install dependencies
+    dependencies_needed = []
+    
+    # Check for Ultralytics (primary for custom weights)
+    try:
+        import ultralytics
+        print("✓ Ultralytics YOLO available")
+    except ImportError:
+        dependencies_needed.append("ultralytics")
+        print("✗ Ultralytics YOLO not installed")
+    
+    # Check for QAI Hub (fallback)
     if not check_qai_hub_installation():
-        print("Installing QAI Hub models...")
-        if not install_qai_hub():
+        dependencies_needed.append("qai-hub-models[yolov11-det]")
+    
+    # Install missing dependencies
+    if dependencies_needed:
+        print(f"Installing missing dependencies: {dependencies_needed}")
+        try:
+            import subprocess
+            subprocess.check_call([
+                sys.executable, "-m", "pip", "install", 
+                *dependencies_needed, "--upgrade"
+            ])
+            print("✓ Dependencies installed successfully")
+        except subprocess.CalledProcessError as e:
+            print(f"✗ Failed to install dependencies: {e}")
             return False
     
-    # Download the model
-    if not download_model_from_qai_hub():
-        return False
+    # Set up custom weights directory
+    print("\nSetting up custom weights directory...")
+    try:
+        import subprocess
+        result = subprocess.run([
+            sys.executable, "setup_custom_weights.py", "--setup"
+        ], capture_output=True, text=True)
+        if result.returncode == 0:
+            print("✓ Custom weights directory set up")
+        else:
+            print("⚠️  Custom weights setup had issues")
+    except Exception as e:
+        print(f"⚠️  Could not set up custom weights: {e}")
     
     # Verify installation
     if not verify_installation():
@@ -227,10 +260,25 @@ def setup_environment():
     print("SETUP COMPLETE!")
     print("=" * 60)
     print("✓ All components installed successfully")
-    print("\nNext steps:")
-    print("1. Run 'python test_squirrel_model.py' to test detection")
-    print("2. For camera detection: 'python gstreamer_camera_detection.py --test'")
-    print("3. For custom dataset: get Roboflow API key and run download")
+    print("\nNEXT STEPS:")
+    print("=" * 12)
+    print("1. TEST DETECTION:")
+    print("   python test_squirrel_model.py")
+    print()
+    print("2. USE WITH GENERAL ANIMAL DETECTION:")
+    print("   python gstreamer_camera_detection.py --test")
+    print()
+    print("3. ADD CUSTOM SQUIRREL WEIGHTS:")
+    print("   python setup_custom_weights.py --instructions")
+    print("   # Place your .pt file in models/custom/squirrel_weights.pt")
+    print("   python gstreamer_camera_detection.py --model custom_squirrel --test")
+    print()
+    print("4. CAMERA DETECTION OPTIONS:")
+    print("   python gstreamer_camera_detection.py --info  # Show model info")
+    print("   python gstreamer_camera_detection.py --model yolov8n_squirrel --camera 1")
+    print()
+    print("NOTE: The system now prioritizes custom squirrel weights over general models.")
+    print("      For best results, train your own squirrel detection model!")
     
     return True
 

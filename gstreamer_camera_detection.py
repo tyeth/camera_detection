@@ -30,12 +30,21 @@ except ImportError as e:
     HAVE_GSTREAMER = False
     print(f"✗ GStreamer not available: {e}")
 
-# Try to import QAI Hub models
+# Import custom squirrel model weights handler
+try:
+    from squirrel_model_weights import SquirrelModelManager, setup_squirrel_model
+    HAVE_SQUIRREL_MODEL = True
+    print("✓ Squirrel model weights handler imported successfully")
+except ImportError as e:
+    HAVE_SQUIRREL_MODEL = False
+    print(f"✗ Squirrel model weights handler not available: {e}")
+
+# Try to import QAI Hub models (fallback)
 try:
     import qai_hub_models.models.yolov11_det as yolov11_model
     import torch
     HAVE_QAI = True
-    print("✓ QAI Hub models imported successfully")
+    print("✓ QAI Hub models available as fallback")
 except ImportError as e:
     HAVE_QAI = False
     print(f"✗ QAI Hub models not available: {e}")
@@ -199,22 +208,57 @@ class FrameCapture:
         return self.latest_frame
 
 class ObjectDetector:
-    """Object detector using QAI Hub YOLOv11"""
+    """Squirrel-specific object detector using custom weights or QAI Hub YOLOv11"""
     
-    def __init__(self, confidence_threshold=0.5):
-        """Initialize the object detector"""
+    def __init__(self, confidence_threshold=0.5, model_name="yolov8n_squirrel"):
+        """Initialize the object detector with squirrel-specific weights"""
         self.confidence_threshold = confidence_threshold
+        self.model_name = model_name
+        self.model_manager = None
         self.model = None
         self.class_names = None
         self.target_classes = ['squirrel', 'bird', 'cat', 'dog', 'horse', 'sheep', 'cow']
         
-        if HAVE_QAI:
-            self._load_model()
+        # Try to load squirrel-specific model first
+        if HAVE_SQUIRREL_MODEL:
+            self._load_squirrel_model()
+        elif HAVE_QAI:
+            self._load_qai_model()
+        else:
+            print("✗ No detection models available")
     
-    def _load_model(self):
-        """Load the YOLOv11 model"""
+    def _load_squirrel_model(self):
+        """Load squirrel-specific model weights"""
         try:
-            print("Loading YOLOv11 model...")
+            print(f"Loading squirrel-specific model: {self.model_name}")
+            self.model_manager = setup_squirrel_model(self.model_name)
+            
+            if self.model_manager and self.model_manager.is_available():
+                self.model = self.model_manager
+                model_info = self.model_manager.get_model_info()
+                print(f"✓ Squirrel model loaded: {model_info['description']}")
+                
+                if "actual_classes" in model_info:
+                    self.class_names = model_info["actual_classes"]
+                    squirrel_available = 'squirrel' in self.class_names
+                    print(f"✓ Model classes: {self.class_names}")
+                    print(f"✓ Squirrel detection available: {squirrel_available}")
+                else:
+                    self.class_names = model_info["classes"]
+                
+                return True
+            else:
+                print("✗ Failed to load squirrel model, trying fallback...")
+                return False
+                
+        except Exception as e:
+            print(f"✗ Error loading squirrel model: {e}")
+            return False
+    
+    def _load_qai_model(self):
+        """Load QAI Hub model as fallback"""
+        try:
+            print("Loading QAI Hub YOLOv11 model as fallback...")
             self.model = yolov11_model.Model.from_pretrained()
             self.model.eval()
             
@@ -222,7 +266,8 @@ class ObjectDetector:
             if hasattr(self.model, 'model') and hasattr(self.model.model, 'names'):
                 names_dict = self.model.model.names
                 self.class_names = [names_dict[i] for i in sorted(names_dict.keys())]
-                print(f"✓ Model loaded with {len(self.class_names)} classes")
+                print(f"✓ QAI Hub model loaded with {len(self.class_names)} classes")
+                print("⚠️  Note: Using general COCO model, not squirrel-specific weights")
             else:
                 # COCO class names fallback
                 self.class_names = [
@@ -233,12 +278,12 @@ class ObjectDetector:
                 ]
                 
         except Exception as e:
-            print(f"✗ Failed to load model: {e}")
+            print(f"✗ Failed to load QAI Hub model: {e}")
             self.model = None
     
     def detect(self, frame):
         """
-        Detect objects in frame
+        Detect objects in frame using squirrel-specific weights
         
         Returns:
             detections: List of detected objects
@@ -248,62 +293,92 @@ class ObjectDetector:
             return [], []
         
         try:
-            # Preprocess
-            image = frame.astype(np.float32) / 255.0
-            image_resized = cv2.resize(image, (640, 640))
-            input_tensor = torch.from_numpy(image_resized).permute(2, 0, 1).unsqueeze(0)
-            
-            # Inference
-            with torch.no_grad():
-                outputs = self.model(input_tensor)
-            
-            # Postprocess
-            boxes, scores, class_ids = outputs
-            boxes = boxes[0].detach().cpu().numpy()
-            scores = scores[0].detach().cpu().numpy()
-            class_ids = class_ids[0].detach().cpu().numpy()
-            
-            # Filter by confidence
-            mask = scores > self.confidence_threshold
-            boxes = boxes[mask]
-            scores = scores[mask]
-            class_ids = class_ids[mask]
-            
-            # Scale boxes to original size
-            scale_x = frame.shape[1] / 640
-            scale_y = frame.shape[0] / 640
-            boxes[:, 0] *= scale_x
-            boxes[:, 1] *= scale_y
-            boxes[:, 2] *= scale_x
-            boxes[:, 3] *= scale_y
-            
-            # Create detection list
-            detections = []
-            triggers = []
-            
-            for i in range(len(boxes)):
-                class_id = int(class_ids[i])
-                if class_id < len(self.class_names):
-                    class_name = self.class_names[class_id]
-                    confidence = float(scores[i])
+            # Use squirrel-specific model if available
+            if self.model_manager and hasattr(self.model_manager, 'detect_squirrels'):
+                # Use custom squirrel detection
+                detections = self.model_manager.detect_squirrels(frame, self.confidence_threshold)
+                
+                # Extract triggers (squirrels and other target animals)
+                triggers = []
+                for detection in detections:
+                    class_name = detection['class_name'].lower()
                     
-                    detection = {
-                        'class_name': class_name,
-                        'confidence': confidence,
-                        'box': boxes[i].tolist()
-                    }
-                    print(f"Detected: {detection}")
-                    detections.append(detection)
-                    
-                    # Check if it's a target class
-                    if class_name in self.target_classes:
+                    # Prioritize actual squirrel detections
+                    if detection.get('is_squirrel', False) or class_name == 'squirrel':
+                        triggers.append('squirrel')
+                    elif class_name in [c.lower() for c in self.target_classes]:
                         triggers.append(class_name)
-            
-            return detections, triggers
-            
+                
+                # Remove duplicates while preserving order
+                triggers = list(dict.fromkeys(triggers))
+                
+                print(f"Squirrel-specific detection: {len(detections)} objects, triggers: {triggers}")
+                return detections, triggers
+                
+            else:
+                # Fallback to QAI Hub model detection
+                return self._detect_with_qai_hub(frame)
+                
         except Exception as e:
             print(f"Detection error: {e}")
             return [], []
+    
+    def _detect_with_qai_hub(self, frame):
+        """Fallback detection using QAI Hub model"""
+        # Preprocess
+        image = frame.astype(np.float32) / 255.0
+        image_resized = cv2.resize(image, (640, 640))
+        input_tensor = torch.from_numpy(image_resized).permute(2, 0, 1).unsqueeze(0)
+        
+        # Inference
+        with torch.no_grad():
+            outputs = self.model(input_tensor)
+        
+        # Postprocess
+        boxes, scores, class_ids = outputs
+        boxes = boxes[0].detach().cpu().numpy()
+        scores = scores[0].detach().cpu().numpy()
+        class_ids = class_ids[0].detach().cpu().numpy()
+        
+        # Filter by confidence
+        mask = scores > self.confidence_threshold
+        boxes = boxes[mask]
+        scores = scores[mask]
+        class_ids = class_ids[mask]
+        
+        # Scale boxes to original size
+        scale_x = frame.shape[1] / 640
+        scale_y = frame.shape[0] / 640
+        boxes[:, 0] *= scale_x
+        boxes[:, 1] *= scale_y
+        boxes[:, 2] *= scale_x
+        boxes[:, 3] *= scale_y
+        
+        # Create detection list
+        detections = []
+        triggers = []
+        
+        for i in range(len(boxes)):
+            class_id = int(class_ids[i])
+            if class_id < len(self.class_names):
+                class_name = self.class_names[class_id]
+                confidence = float(scores[i])
+                
+                detection = {
+                    'class_name': class_name,
+                    'confidence': confidence,
+                    'box': boxes[i].tolist(),
+                    'is_squirrel': False  # QAI Hub model doesn't have squirrel class
+                }
+                print(f"Detected: {detection}")
+                detections.append(detection)
+                
+                # Check if it's a target class (no squirrel in COCO)
+                if class_name in self.target_classes:
+                    triggers.append(class_name)
+        
+        print(f"QAI Hub fallback detection: {len(detections)} objects, triggers: {triggers}")
+        return detections, triggers
     
     def is_available(self):
         """Check if detector is available"""
@@ -382,12 +457,13 @@ class GPIOController:
                 pass
 
 class CameraDetectionSystem:
-    """Complete camera detection system"""
+    """Complete camera detection system with squirrel-specific weights"""
     
-    def __init__(self, camera_id=0, confidence_threshold=0.5):
+    def __init__(self, camera_id=0, confidence_threshold=0.5, model_name="yolov8n_squirrel"):
         """Initialize the system"""
         self.camera_id = camera_id
         self.confidence_threshold = confidence_threshold
+        self.model_name = model_name
         
         # Initialize components
         self.capture = None
@@ -395,18 +471,16 @@ class CameraDetectionSystem:
         self.gpio = None
         self.running = False
         
-        print("Initializing camera detection system...")
+        print("Initializing camera detection system with squirrel-specific weights...")
+        print(f"Target model: {model_name}")
         
         # Check dependencies
         if not HAVE_GSTREAMER:
             raise RuntimeError("GStreamer required for camera capture")
         
-        if not HAVE_QAI:
-            raise RuntimeError("QAI Hub models required for detection")
-        
         # Initialize components
         self.capture = FrameCapture(camera_id)
-        self.detector = ObjectDetector(confidence_threshold)
+        self.detector = ObjectDetector(confidence_threshold, model_name)
         self.gpio = GPIOController(simulate=not HAVE_GPIO)
         
         # Setup GPIO pins
@@ -416,9 +490,21 @@ class CameraDetectionSystem:
         self.gpio.setup_pin("dog", 23)
         
         if not self.detector.is_available():
-            raise RuntimeError("Object detector failed to initialize")
-        
-        print("✓ Camera detection system initialized")
+            print("⚠️  Detector initialized but may be using fallback model")
+        else:
+            print("✓ Squirrel detection system initialized successfully")
+    
+    def get_model_info(self):
+        """Get information about the loaded model"""
+        if self.detector and hasattr(self.detector, 'model_manager') and self.detector.model_manager:
+            return self.detector.model_manager.get_model_info()
+        else:
+            return {
+                "model_name": "fallback",
+                "description": "QAI Hub YOLOv11 (general COCO model)",
+                "classes": self.detector.class_names if self.detector else [],
+                "note": "Using fallback model - no squirrel-specific weights loaded"
+            }
     
     def start(self):
         """Start the detection system"""
@@ -497,11 +583,14 @@ def main():
     """Main entry point"""
     import argparse
     
-    parser = argparse.ArgumentParser(description="GStreamer Camera Detection System")
+    parser = argparse.ArgumentParser(description="GStreamer Camera Detection System with Squirrel Weights")
     parser.add_argument("--camera", type=int, default=0, help="Camera ID (0 or 1)")
     parser.add_argument("--confidence", type=float, default=0.5, help="Confidence threshold")
     parser.add_argument("--duration", type=int, help="Run duration in seconds")
     parser.add_argument("--test", action="store_true", help="Run a quick test")
+    parser.add_argument("--model", default="yolov8n_squirrel", 
+                       help="Model to use (yolov8n_squirrel, yolov8s_squirrel, custom_squirrel)")
+    parser.add_argument("--info", action="store_true", help="Show model info and exit")
     
     args = parser.parse_args()
     
@@ -509,18 +598,39 @@ def main():
         # Create system
         system = CameraDetectionSystem(
             camera_id=args.camera,
-            confidence_threshold=args.confidence
+            confidence_threshold=args.confidence,
+            model_name=args.model
         )
         
+        if args.info:
+            # Show model information
+            model_info = system.get_model_info()
+            print("\n" + "=" * 60)
+            print("MODEL INFORMATION")
+            print("=" * 60)
+            print(f"Model Name: {model_info.get('model_name', 'Unknown')}")
+            print(f"Description: {model_info.get('description', 'No description')}")
+            print(f"Classes: {model_info.get('classes', [])}")
+            if 'actual_classes' in model_info:
+                print(f"Actual Classes: {model_info['actual_classes']}")
+            print(f"Device: {model_info.get('device', 'Unknown')}")
+            print(f"Loaded: {model_info.get('loaded', False)}")
+            if 'note' in model_info:
+                print(f"Note: {model_info['note']}")
+            return
+        
         if args.test:
-            print("Running 10-second test...")
+            print("Running 10-second test with squirrel detection...")
             system.run(duration=10)
         else:
-            print("Starting detection system (Ctrl+C to stop)...")
+            print("Starting squirrel detection system (Ctrl+C to stop)...")
+            print(f"Using model: {args.model}")
             system.run(duration=args.duration)
             
     except Exception as e:
         print(f"✗ Error: {e}")
+        import traceback
+        traceback.print_exc()
         sys.exit(1)
 
 if __name__ == "__main__":
